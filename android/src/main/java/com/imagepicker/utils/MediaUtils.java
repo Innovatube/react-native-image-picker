@@ -7,10 +7,13 @@ import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import com.facebook.react.bridge.ReadableMap;
 import com.imagepicker.ImagePickerModule;
@@ -46,9 +49,11 @@ public class MediaUtils
                 .append(".jpg")
                 .toString();
 
-        final File path = ReadableMapUtils.hasAndNotNullReadableMap(options, "storageOptions") && !forceLocal
-                ? Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                : reactContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        final File path = ReadableMapUtils.hasAndNotNullReadableMap(options, "storageOptions")
+                && ReadableMapUtils.hasAndNotEmptyString(options.getMap("storageOptions"), "path")
+                ? new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), options.getMap("storageOptions").getString("path"))
+                : (!forceLocal ? Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                              : reactContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES));
 
         File result = new File(path, filename);
 
@@ -76,12 +81,14 @@ public class MediaUtils
      * @param initialHeight
      * @return updated ImageConfig
      */
-    public static @NonNull ImageConfig getResizedImage(@NonNull final Context context,
-                                                       @NonNull final ReadableMap options,
-                                                       @NonNull final ImageConfig imageConfig,
-                                                       int initialWidth,
-                                                       int initialHeight,
-                                                       final int requestCode)
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public static @NonNull
+    ImageConfig getResizedImage(@NonNull final Context context,
+                                @NonNull final ReadableMap options,
+                                @NonNull final ImageConfig imageConfig,
+                                int initialWidth,
+                                int initialHeight,
+                                final int requestCode)
     {
         BitmapFactory.Options imageOptions = new BitmapFactory.Options();
         imageOptions.inScaled = false;
